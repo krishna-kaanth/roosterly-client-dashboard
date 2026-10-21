@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Roosterly Client Results Dashboard</title>
+<meta name="description" content="Roosterly client results dashboard: layout for approval, shown with sample HVAC data.">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta property="og:title" content="Roosterly Client Results Dashboard">
+<meta property="og:description" content="Leads, jobs, revenue and every marketing channel in one view. Layout for approval, sample data.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#000000">
+<link rel="icon" type="image/png" href="assets/mark-white.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: Roosterly's black site shell (logo bar + gradient rule) over a charcoal report: page list left, 12-col card grid right. Dark-only by design, matching roosterly.com. */
+:root {
+  color-scheme: dark;
+  --black: #000000;
+  --bg: #121315;
+  --surface: #1b1d1f;
+  --surface-2: #25282b;
+  --line: #33373b;
+  --grid: #2a2d30;
+  --ink: #f5f6f6;
+  --ink-2: #b9bcbf;
+  --ink-3: #8f9396;
+  --lime: #86ba00;
+  --lime-ink: #a6d81c;
+  --magenta: #d52d81;
+  --violet: #7a6bf8;
+  --orange: #ff9600;
+  --brand-gradient: linear-gradient(90deg, #7a6bf8 0%, #d52d81 52%, #ff9600 100%);
+  --good: #5fcf6e; --good-bg: rgba(95, 207, 110, .13);
+  --bad: #f2776f; --bad-bg: rgba(242, 119, 111, .14);
+  --flat-bg: rgba(255, 255, 255, .07);
+  --note-bg: #1f1d14; --note-line: #4a4426;
+  /* chart series, validated on --surface (CVD + lightness + contrast) */
+  --s1: #4d7de1; --s2: #d52d81; --s3: #6f9e00; --s4: #7a6bf8; --s5: #cf7400; --s6: #26a091; --s-other: #6b7075;
+  --font: "Open Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.5; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.inner { max-width: 1440px; margin: 0 auto; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+td, .kpi-value, .num { font-variant-numeric: tabular-nums; }
+
+/* Brand bar */
+.brandbar { background: var(--black); position: relative; }
+.brandbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--brand-gradient); }
+.brandbar .inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: calc(env(safe-area-inset-top, 0px) + 14px) 17px; }
+.brandbar img { height: 34px; width: auto; display: block; }
+.brandbar .tag { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); text-align: right; }
+
+/* Client bar */
+.clientbar .inner { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-end; justify-content: space-between; padding-block: 22px 18px; border-bottom: 1px solid var(--line); }
+.client { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pill { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: var(--note-bg); border: 1px solid var(--note-line); color: #e9d98f; }
+.client h1 { font-size: 28px; font-weight: 800; letter-spacing: -.01em; line-height: 1.15; }
+.client .sub { color: var(--ink-2); font-size: 13.5px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.ctl { display: flex; flex-direction: column; gap: 1px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+.ctl small { font-size: 10.5px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; font-weight: 700; }
+.ctl span { font-size: 13px; font-weight: 600; }
+.toggle { font: inherit; font-size: 13px; font-weight: 700; padding: 9px 16px; border-radius: 8px; border: 1px solid var(--lime); background: transparent; color: var(--lime-ink); cursor: pointer; }
+.toggle:hover { background: rgba(134, 186, 0, .1); }
+.toggle[aria-pressed="true"] { background: var(--lime); color: var(--black); }
+.toggle:focus-visible, .pagebtn:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+
+/* Shell */
+.shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 24px; padding-block: 22px 40px; align-items: start; }
+.pages { display: flex; flex-direction: column; gap: 2px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+.pagebtn { font: inherit; text-align: left; border: 0; background: transparent; color: var(--ink-2); padding: 10px 12px; border-radius: 8px; cursor: pointer; display: flex; gap: 10px; align-items: baseline; font-weight: 600; }
+.pagebtn b { font-weight: 800; color: var(--ink-3); font-size: 12px; width: 14px; }
+.pagebtn:hover { background: var(--surface); color: var(--ink); }
+.pagebtn[aria-current="page"] { background: var(--surface-2); color: var(--ink); }
+.pagebtn[aria-current="page"] b { color: var(--lime-ink); }
+.legendbox { margin-top: 16px; padding: 14px 12px 0; border-top: 1px solid var(--line); display: grid; gap: 7px; font-size: 12.5px; color: var(--ink-2); }
+.legendbox strong { font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; vertical-align: -1px; flex: none; }
+
+/* Page */
+.pagehead { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; margin-bottom: 16px; }
+.pagehead h2 { font-size: 30px; font-weight: 800; letter-spacing: -.015em; background: var(--brand-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pagehead p { margin: 0; color: var(--ink-2); font-size: 15px; font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; grid-column: span 6; }
+.span-12 { grid-column: span 12; } .span-8 { grid-column: span 8; } .span-4 { grid-column: span 4; } .span-7 { grid-column: span 7; } .span-5 { grid-column: span 5; }
+.card > header { display: flex; flex-direction: column; gap: 2px; }
+.card h3 { font-size: 16px; font-weight: 700; }
+.card .q { margin: 0; color: var(--ink-3); font-size: 13px; }
+.chartbox { position: relative; height: 260px; }
+.chartbox.short { height: 200px; }
+.chartbox.tall { height: 310px; }
+
+/* KPIs */
+.kpis { display: grid; gap: 16px; grid-template-columns: 3fr 4fr; }
+.kgroup { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.kgroup > small { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 800; color: var(--ink-3); }
+.ktiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)); }
+.kpi { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--surface-2); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kpi-label { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+.kpi-value { font-size: 27px; font-weight: 800; letter-spacing: -.015em; line-height: 1.1; }
+.kpi-foot { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--ink-3); }
+.spark { display: block; width: 100%; height: 30px; margin-top: 4px; }
+.delta { font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 5px; }
+.delta.good { color: var(--good); background: var(--good-bg); }
+.delta.bad { color: var(--bad); background: var(--bad-bg); }
+.delta.flat { color: var(--ink-2); background: var(--flat-bg); }
+
+/* Funnel */
+.funnel { display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
+.fstep { padding: 12px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "lab val" "rate val"; align-items: center; gap: 0 12px; min-width: 0; }
+.fstep:first-child { border-top: 0; padding-top: 2px; }
+.fstep .lab { grid-area: lab; } .fstep .val { grid-area: val; } .fstep .rate { grid-area: rate; }
+.fstep .lab { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+.fstep .val { font-size: 26px; font-weight: 800; text-align: right; }
+.fstep .rate { font-size: 12px; color: var(--ink-3); }
+.fstep .rate b { color: var(--lime-ink); font-weight: 700; }
+
+/* Tables */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+caption { text-align: left; color: var(--ink-3); font-size: 12px; padding-bottom: 6px; }
+th { text-align: left; font-weight: 700; font-size: 11px; color: var(--ink-3); letter-spacing: .05em; text-transform: uppercase; padding: 7px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 8px 9px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+tbody tr:hover td { background: rgba(255, 255, 255, .025); }
+th.r, td.r { text-align: right; }
+tr.total td { font-weight: 800; border-top: 1px solid var(--line); border-bottom: 0; }
+.chip { display: inline-flex; align-items: center; }
+.stage { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 5px; background: var(--surface-2); color: var(--ink-2); }
+.stage.won { background: var(--good-bg); color: var(--good); }
+.stage.lost { background: var(--bad-bg); color: var(--bad); }
+.cellbar { display: inline-block; height: 6px; border-radius: 3px; vertical-align: middle; margin-right: 7px; }
+.muted { color: var(--ink-3); }
+
+/* Notes + misc */
+.caveat { font-size: 12.5px; color: var(--ink-2); background: var(--surface-2); border-radius: 8px; padding: 9px 11px; margin: 0; }
+.notes { display: none; border-top: 1px dashed var(--note-line); background: var(--note-bg); margin: 4px -18px -18px; padding: 11px 18px 13px; border-radius: 0 0 12px 12px; font-size: 12.5px; grid-template-columns: 112px minmax(0, 1fr); gap: 4px 12px; }
+body.show-notes .notes { display: grid; }
+.notes dt { color: #c9b96c; font-weight: 700; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
+.notes dd { margin: 0; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.notes .id { font-weight: 800; color: var(--lime-ink); }
+.placeholder { border: 1px dashed var(--line); border-radius: 10px; padding: 18px; color: var(--ink-2); display: grid; gap: 6px; background: var(--surface-2); }
+.placeholder strong { color: var(--ink); }
+
+/* Footer */
+.foot { border-top: 1px solid var(--line); background: var(--black); }
+.foot .inner { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; padding-block: 26px calc(env(safe-area-inset-bottom, 0px) + 30px); }
+.foot h4 { margin: 0 0 10px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 800; }
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 22px; margin: 0; }
+.defs div { min-width: 0; }
+.defs dt { font-weight: 700; font-size: 13px; }
+.defs dd { margin: 0; color: var(--ink-2); font-size: 12.5px; }
+.made { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; color: var(--ink-3); font-size: 12.5px; }
+.made img { height: 26px; width: auto; }
+
+@media (max-width: 1120px) {
+  .kpis { grid-template-columns: 1fr; }
+  .card, .span-4, .span-5, .span-7, .span-8 { grid-column: span 12; }
+}
+@media (max-width: 840px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .pages { position: static; flex-direction: row; overflow-x: auto; gap: 4px; padding-bottom: 4px; }
+  .pagebtn { white-space: nowrap; }
+  .legendbox { display: none; }
+  .notes { grid-template-columns: minmax(0, 1fr); }
+  .foot .inner { grid-template-columns: minmax(0, 1fr); }
+  .brandbar .tag { display: none; }
+  .pagehead h2 { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="brandbar gutter">
+  <div class="inner">
+    <img src="assets/logo-white.png" alt="Roosterly" width="219" height="59">
+    <span class="tag">Client results dashboard</span>
+  </div>
+</header>
+
+<section class="clientbar gutter">
+  <div class="inner">
+    <div class="client">
+      <span class="pill">Sample data · layout for approval</span>
+      <h1>Sample HVAC Co.</h1>
+      <span class="sub">Google Ads · Meta Ads · SEO · AI search · Chicago service area</span>
+    </div>
+    <div class="controls" aria-label="Report controls">
+      <div class="ctl"><small>Date range</small><span>Sep 20 – Oct 19, 2026</span></div>
+      <div class="ctl"><small>Compared with</small><span>Previous 30 days</span></div>
+      <div class="ctl"><small>Channel</small><span>All channels</span></div>
+      <button class="toggle" id="notesToggle" type="button" aria-pressed="false">Show build notes</button>
+    </div>
+  </div>
+</section>
+
+<div class="gutter">
+  <div class="inner shell">
+    <nav class="pages" id="pages" aria-label="Report pages"></nav>
+    <main id="page" aria-live="polite"></main>
+  </div>
+</div>
+
+<footer class="foot gutter">
+  <div class="inner">
+    <div>
+      <h4>How we count</h4>
+      <dl class="defs">
+        <div><dt>Lead</dt><dd>A new enquiry in your CRM (form, call or booking), counted once.</dd></div>
+        <div><dt>Cost per lead</dt><dd>Ad spend ÷ leads from paid channels.</dd></div>
+        <div><dt>Won job</dt><dd>A lead marked won in your CRM, or a quote you approved.</dd></div>
+        <div><dt>Cost per won job (CAC)</dt><dd>Ad spend ÷ won jobs from paid channels.</dd></div>
+        <div><dt>Return on ad spend</dt><dd>Revenue from paid-channel jobs ÷ ad spend. Blended uses all revenue.</dd></div>
+        <div><dt>AI search</dt><dd>Visits from ChatGPT, Perplexity, Gemini, Copilot and Claude.</dd></div>
+      </dl>
+    </div>
+    <div class="made">
+      <img src="assets/logo-white.png" alt="Roosterly" width="219" height="59">
+      <span>Data refreshes daily from Google Ads, Meta Ads, Google Analytics, Search Console and your CRM. Figures on this page are sample data.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function () {
+  // ---------- sample data ----------
+  var CHANNELS = ["Google Ads", "Meta Ads", "Organic Search", "AI Search", "Direct", "Referral", "Other"];
+  var CH_VAR = ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6", "--s-other"];
+  var ENG_VAR = ["--s1", "--s2", "--s3", "--s4", "--s5"];
+  var WEEKS = (function () { var out = [], d = new Date(2026, 6, 20); for (var i = 0; i < 13; i++) { out.push(d.toLocaleDateString("en-US", { month: "short", day: "numeric" })); d.setDate(d.getDate() + 7); } return out; })();
+  var MONTHS = ["Oct 25", "Nov", "Dec", "Jan 26", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"];
+  var seed = 7;
+  function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function ramp(a, b, noise, n) { n = n || 13; var o = []; for (var i = 0; i < n; i++) { var v = a + (b - a) * i / (n - 1); v = v * (1 + (rnd() - 0.5) * noise); o.push(Math.max(0, Math.round(v))); } return o; }
+  function ramp1(a, b, noise, n) { n = n || 13; var o = []; for (var i = 0; i < n; i++) { var v = a + (b - a) * i / (n - 1); v = v + (rnd() - 0.5) * noise; o.push(Math.round(v * 10) / 10); } return o; }
+
+  var leadsWeekly = [ramp(8, 12, 0.35), ramp(3, 6, 0.5), ramp(3, 5, 0.5), ramp(0, 2, 0.9), ramp(2, 2, 0.6), ramp(1, 1, 0.9), ramp(1, 1, 0.9)];
+  var leadsTotalW = WEEKS.map(function (_, i) { return leadsWeekly.reduce(function (s, a) { return s + a[i]; }, 0); });
+  var spendW = ramp(1780, 1950, 0.06), wonW = ramp(5, 8, 0.3), revW = ramp(24000, 35000, 0.18);
+  var paidLeadsW = WEEKS.map(function (_, i) { return leadsWeekly[0][i] + leadsWeekly[1][i]; });
+  var cplW = spendW.map(function (s, i) { return Math.round(s / Math.max(1, paidLeadsW[i])); });
+  var cacW = spendW.map(function (s, i) { return Math.round(s / Math.max(1, Math.round(wonW[i] * 0.55))); });
+  var roasW = revW.map(function (r, i) { return Math.round(r * 0.53 / spendW[i] * 10) / 10; });
+  var spendM = [5400, 5600, 6100, 6300, 6000, 5800, 6200, 7100, 8200, 8600, 8400, 7900];
+  var revM = [98000, 112000, 138000, 151000, 129000, 96000, 88000, 117000, 162000, 181000, 166000, 128000];
+
+  var SCORE = [
+    ["Google Ads", 6200, 46, 13, 61400], ["Meta Ads", 2100, 22, 4, 14900], ["Organic Search", null, 18, 6, 31200],
+    ["AI Search", null, 6, 3, 18700], ["Direct", null, 9, 3, 9800], ["Referral", null, 5, 2, 6600], ["Other", null, 3, 0, 0]
+  ];
+  var RAW = [
+    ["Google Ads Form", 31, 0], ["Google Ads Call", 15, 0], ["Facebook Lead Form", 17, 1], ["Instagram", 5, 1],
+    ["Organic Search", 12, 2], ["Google Business Profile", 6, 2], ["ChatGPT", 4, 3], ["Perplexity", 2, 3],
+    ["Direct / typed URL", 9, 4], ["Neighbour referral", 3, 5], ["Nextdoor", 2, 5], ["Unknown", 3, 6]
+  ];
+  var RECENT = [
+    ["Oct 19", "L-2291", 0, "Google Ads Call", "New", null], ["Oct 18", "L-2290", 3, "ChatGPT", "Quoted", 11800],
+    ["Oct 18", "L-2289", 1, "Facebook Lead Form", "New", null], ["Oct 17", "L-2287", 2, "Organic Search", "Won", 6850],
+    ["Oct 17", "L-2286", 0, "Google Ads Form", "Quoted", 7400], ["Oct 16", "L-2284", 0, "Google Ads Form", "Won", 489],
+    ["Oct 16", "L-2283", 4, "Direct / typed URL", "Lost", 9200], ["Oct 15", "L-2281", 5, "Neighbour referral", "Won", 5300],
+    ["Oct 14", "L-2279", 1, "Instagram", "Lost", 350], ["Oct 14", "L-2278", 0, "Google Ads Call", "Won", 12900]
+  ];
+  var CAMPAIGNS = [
+    ["Google", "Search · AC & furnace repair", "Search", 2450, 14200, 1180, 27],
+    ["Google", "Search · System replacement", "Search", 1620, 9800, 512, 13],
+    ["Google", "Performance Max · Heating", "PMax", 1180, 22600, 590, 10],
+    ["Google", "Local Services Ads", "LSA", 720, null, null, 4],
+    ["Google", "Search · Brand", "Search", 230, 2300, 229, 4],
+    ["Meta", "Lead form · Fall furnace tune-up", "Leads", 1450, 61200, 598, 17],
+    ["Meta", "Retargeting · Site visitors", "Traffic", 650, 35200, 303, 6]
+  ];
+  var TERMS = [["ac repair near me", 312, 641, 9], ["furnace replacement chicago", 188, 702, 7], ["hvac company near me", 241, 488, 5], ["emergency furnace repair", 96, 251, 4], ["ac not cooling", 143, 214, 2], ["heat pump installation cost", 77, 236, 1], ["furnace tune up", 118, 196, 3], ["mini split install chicago", 52, 170, 1]];
+  var ZIPS = [["60614 Lincoln Park", 9], ["60657 Lakeview", 8], ["60201 Evanston", 7], ["60302 Oak Park", 6], ["60068 Park Ridge", 5], ["60076 Skokie", 4], ["60618 Avondale", 4], ["60016 Des Plaines", 3]];
+  var QUERIES = [["furnace repair chicago", 214, 6120, 8.2], ["sample hvac", 188, 402, 1.1], ["new furnace cost chicago", 97, 4410, 6.4], ["ac repair lincoln park", 81, 1180, 3.9], ["heat pump rebate illinois", 64, 5230, 9.7], ["hvac maintenance plan chicago", 41, 1920, 7.3], ["furnace making loud noise", 38, 3870, 11.8], ["sample hvac reviews", 35, 96, 1.4]];
+  var ORGPAGES = [["/furnace-repair/", 402, 611, 9], ["/furnace-replacement-cost-chicago/", 268, 455, 6], ["/heat-pump-rebates-illinois/", 231, 389, 3], ["/ac-repair/", 174, 290, 5], ["/", 361, 540, 4], ["/maintenance-plan/", 88, 146, 2]];
+  var ENGINES = ["ChatGPT", "Perplexity", "Gemini", "Copilot", "Claude"];
+  var aiWeekly = [ramp(6, 19, 0.3), ramp(2, 6, 0.5), ramp(1, 5, 0.6), ramp(1, 3, 0.7), ramp(0, 2, 0.9)];
+  var ENGTAB = [["ChatGPT", 71, 0.68, 9, 4], ["Perplexity", 22, 0.72, 3, 2], ["Gemini", 14, 0.61, 1, 0], ["Copilot", 7, 0.57, 0, 0], ["Claude", 4, 0.75, 1, 0]];
+  var AIPAGES = [["/furnace-replacement-cost-chicago/", 38, 4], ["/heat-pump-rebates-illinois/", 27, 3], ["/ac-repair/", 19, 3], ["/reviews/", 14, 2], ["/about/", 11, 1], ["/", 9, 1]];
+  var sessWeekly = [ramp(240, 300, 0.15), ramp(110, 150, 0.25), ramp(330, 410, 0.12), ramp(14, 36, 0.4), ramp(180, 195, 0.15), ramp(45, 50, 0.3), ramp(30, 32, 0.3)];
+  var LEADRATE = [["Google Ads", 4.7], ["Meta Ads", 3.8], ["Organic Search", 2.4], ["AI Search", 7.6], ["Direct", 3.1], ["Referral", 2.9]];
+  var LANDING = [["/", 1140, 0.58, 31], ["/furnace-repair/", 810, 0.66, 29], ["/ac-repair/", 642, 0.63, 22], ["/furnace-replacement-cost-chicago/", 588, 0.71, 14], ["/contact/", 301, 0.79, 26], ["/heat-pump-rebates-illinois/", 412, 0.69, 6]];
+  var CITIES = [["Chicago", 2710], ["Evanston", 412], ["Oak Park", 338], ["Skokie", 251], ["Park Ridge", 214], ["Des Plaines", 189], ["Other", 706]];
+
+  // ---------- formatting ----------
+  function money(v) { return v == null ? "—" : "$" + Math.round(v).toLocaleString("en-US"); }
+  function n(v) { return v == null ? "—" : Math.round(v).toLocaleString("en-US"); }
+  function pct(v, d) { return v == null ? "—" : (v * 100).toFixed(d == null ? 0 : d) + "%"; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function chColor(i) { return css(CH_VAR[i]); }
+  function sw(varName) { return '<span class="sw" style="background:var(' + varName + ')"></span>'; }
+  function chName(i) { return '<span class="chip">' + sw(CH_VAR[i]) + esc(CHANNELS[i]) + "</span>"; }
+
+  // ---------- building blocks ----------
+  function notes(id, o) {
+    return '<dl class="notes"><dt>Chart</dt><dd><span class="id">' + id + "</span> · " + esc(o.l) + "</dd>" +
+      "<dt>Data</dt><dd>" + esc(o.d) + "</dd>" +
+      (o.f ? "<dt>Filters</dt><dd>" + esc(o.f) + "</dd>" : "") +
+      "<dt>Why</dt><dd>" + esc(o.w) + "</dd>" +
+      (o.c ? "<dt>Watch for</dt><dd>" + esc(o.c) + "</dd>" : "") + "</dl>";
+  }
+  function card(id, title, q, inner, o, span) {
+    return '<section class="card ' + (span || "") + '"><header><h3>' + esc(title) + '</h3><p class="q">' + esc(q) + "</p></header>" + inner + notes(id, o) + "</section>";
+  }
+  function canvas(key, cls, label) { return '<div class="chartbox ' + (cls || "") + '"><canvas id="c-' + key + '" role="img" aria-label="' + esc(label || "Chart") + '"></canvas></div>'; }
+  function delta(text, good) { return '<span class="delta ' + (good == null ? "flat" : good ? "good" : "bad") + '">' + text + "</span>"; }
+  function spark(arr, varName) {
+    var w = 120, h = 30, p = 3, mn = Math.min.apply(null, arr), mx = Math.max.apply(null, arr), rg = (mx - mn) || 1;
+    var pts = arr.map(function (v, i) { return [p + (w - 2 * p) * i / (arr.length - 1), p + (h - 2 * p) * (1 - (v - mn) / rg)]; });
+    var line = pts.map(function (q) { return q[0].toFixed(1) + "," + q[1].toFixed(1); }).join(" ");
+    var last = pts[pts.length - 1];
+    return '<svg class="spark" viewBox="0 0 ' + w + " " + h + '" preserveAspectRatio="none" aria-hidden="true">' +
+      '<polygon points="' + p + "," + h + " " + line + " " + (w - p) + "," + h + '" fill="var(' + varName + ')" fill-opacity=".14"></polygon>' +
+      '<polyline points="' + line + '" fill="none" stroke="var(' + varName + ')" stroke-width="1.6" vector-effect="non-scaling-stroke"></polyline>' +
+      '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="2.4" fill="var(' + varName + ')"></circle></svg>';
+  }
+  function kpi(label, value, d, foot, sp) { return '<div class="kpi"><span class="kpi-label">' + label + '</span><span class="kpi-value">' + value + '</span><span class="kpi-foot">' + d + (foot ? "<span>" + foot + "</span>" : "") + "</span>" + (sp || "") + "</div>"; }
+  function table(head, rows, caption, totalRow) {
+    var h = "<tr>" + head.map(function (x) { return '<th class="' + (x[1] || "") + '">' + x[0] + "</th>"; }).join("") + "</tr>";
+    var b = rows.map(function (r) { return "<tr>" + r.map(function (c, i) { return '<td class="' + (head[i][1] || "") + '">' + c + "</td>"; }).join("") + "</tr>"; }).join("");
+    if (totalRow) b += '<tr class="total">' + totalRow.map(function (c, i) { return '<td class="' + (head[i][1] || "") + '">' + c + "</td>"; }).join("") + "</tr>";
+    return '<div class="tablewrap"><table>' + (caption ? "<caption>" + caption + "</caption>" : "") + "<thead>" + h + "</thead><tbody>" + b + "</tbody></table></div>";
+  }
+  function bar(v, max, varName) { return '<span class="cellbar" style="width:' + Math.max(3, Math.round(60 * v / max)) + "px;background:var(" + varName + ')"></span>'; }
+
+  // ---------- charts ----------
+  var charts = [], builders = [];
+  function deepMerge(a, b) { for (var k in b) { if (b[k] && typeof b[k] === "object" && !Array.isArray(b[k]) && a[k] && typeof a[k] === "object") deepMerge(a[k], b[k]); else a[k] = b[k]; } return a; }
+  function baseOpts(extra) {
+    var ink2 = css("--ink-2"), font = { family: css("--font"), size: 11.5 };
+    return deepMerge({
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { position: "top", align: "start", labels: { color: ink2, boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 3, padding: 14, font: { family: css("--font"), size: 12, weight: "600" } } },
+        tooltip: { backgroundColor: css("--black"), borderColor: css("--line"), borderWidth: 1, titleColor: css("--ink"), bodyColor: css("--ink-2"), titleFont: { family: css("--font"), weight: "700" }, bodyFont: { family: css("--font") }, padding: 10, cornerRadius: 8, boxPadding: 4, usePointStyle: true }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { color: css("--line") }, ticks: { color: ink2, font: font, maxRotation: 0, autoSkipPadding: 12 } },
+        y: { grid: { color: css("--grid") }, border: { display: false }, ticks: { color: ink2, font: font, maxTicksLimit: 6 }, beginAtZero: true }
+      }
+    }, extra || {});
+  }
+  function stackedBars(labels, series, names, colors, opts) {
+    var last = series.length - 1;
+    return { type: "bar",
+      data: { labels: labels, datasets: series.map(function (s, i) { return { label: names[i], data: s, backgroundColor: colors[i], borderColor: css("--surface"), borderWidth: { top: 1.5 }, borderSkipped: "bottom", borderRadius: i === last ? { topLeft: 4, topRight: 4 } : 0, stack: "s", barPercentage: 0.72, categoryPercentage: 0.86 }; }) },
+      options: baseOpts(deepMerge({ scales: { x: { stacked: true }, y: { stacked: true } } }, opts || {})) };
+  }
+  function hbars(labels, values, colors, fmt, opts) {
+    return { type: "bar",
+      data: { labels: labels, datasets: [{ data: values, backgroundColor: colors, borderRadius: { topRight: 4, bottomRight: 4 }, borderSkipped: "left", barPercentage: 0.7, categoryPercentage: 0.9 }] },
+      options: baseOpts(deepMerge({ indexAxis: "y", interaction: { mode: "nearest", axis: "y", intersect: false }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { return " " + fmt(c.raw); } } } }, scales: { x: { grid: { color: css("--grid"), display: true }, ticks: { callback: function (v) { return fmt(v); } } }, y: { grid: { display: false } } } }, opts || {})) };
+  }
+  function lines(labels, series, names, colors, opts) {
+    return { type: "line",
+      data: { labels: labels, datasets: series.map(function (s, i) { return { label: names[i], data: s, borderColor: colors[i], backgroundColor: colors[i] + "26", fill: series.length === 1 ? "origin" : false, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.3 }; }) },
+      options: baseOpts(opts || {}) };
+  }
+  function columns(labels, data, color, label, fmt, opts) {
+    return { type: "bar", data: { labels: labels, datasets: [{ label: label, data: data, backgroundColor: color, borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "bottom", barPercentage: 0.62 }] },
+      options: baseOpts(deepMerge({ plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { return " " + (fmt ? fmt(c.raw) : c.raw); } } } } }, opts || {})) };
+  }
+  function addChart(key, fn) { builders.push([key, fn]); }
+  function drawCharts() {
+    charts.forEach(function (c) { c.destroy(); }); charts = [];
+    seed = 4242; // same sample numbers on every redraw
+    if (!window.Chart) return;
+    builders.forEach(function (b) { var el = document.getElementById("c-" + b[0]); if (el) charts.push(new Chart(el, b[1]())); });
+  }
+  var usd = function (v) { return "$" + (v >= 1000 ? Math.round(v / 1000) + "k" : v); };
+
+  // ---------- pages ----------
+  var PAGES = [
+    { id: "overview", name: "Overview", q: "Is my marketing working?", render: pOverview },
+    { id: "leads", name: "Leads & sales", q: "Where do customers come from, and do they close?", render: pLeads },
+    { id: "paid", name: "Paid ads", q: "What did the ads deliver?", render: pPaid },
+    { id: "seo", name: "Search (SEO)", q: "Are more people finding us on Google?", render: pSeo },
+    { id: "geo", name: "AI search (GEO)", q: "Are AI tools sending us customers?", render: pGeo },
+    { id: "web", name: "Website", q: "How do people reach and use the site?", render: pWeb }
+  ];
+
+  function pOverview() {
+    var spend = 8300, paidRev = 61400 + 14900;
+    var html = '<div class="grid">';
+    html += '<section class="card span-12"><header><h3>Headline numbers</h3><p class="q">Is my marketing working this month? Lines show the last 13 weeks.</p></header><div class="kpis">' +
+      '<div class="kgroup"><small>Marketing</small><div class="ktiles">' +
+      kpi("Ad spend", money(spend), delta("▲ 6%", null), "vs $7,830", spark(spendW, "--s1")) +
+      kpi("Leads", "109", delta("▲ 14%", true), "vs 96", spark(leadsTotalW, "--s3")) +
+      kpi("Cost per lead (paid)", money(spend / 68), delta("▼ 9%", true), "68 paid leads", spark(cplW, "--s5")) +
+      '</div></div><div class="kgroup"><small>Sales</small><div class="ktiles">' +
+      kpi("Won jobs", "31", delta("▲ 11%", true), "vs 28", spark(wonW, "--s3")) +
+      kpi("Cost per won job", money(spend / 17), delta("▼ 7%", true), "17 paid jobs", spark(cacW, "--s5")) +
+      kpi("Won revenue", money(142600), delta("▲ 18%", true), "vs $120,800", spark(revW, "--s4")) +
+      kpi("Return on ad spend", (paidRev / spend).toFixed(1) + "×", delta("▲ 0.8×", true), "blended 17.2×", spark(roasW, "--s2")) +
+      "</div></div></div>" +
+      notes("1.1", { l: "Looker Studio scorecards ×7 with comparison to previous period and a 13-week sparkline (cost metrics: down = green).", d: "Spend: Google Ads cost + Meta spend. Leads, won jobs, revenue: CRM standard fields (GHL / HubSpot / Jobber). CPL, CAC and ROAS use paid channels; blended ROAS = all won revenue ÷ ad spend.", f: "Date range, channel.", w: "An owner gives the report five seconds. These seven numbers carry the story from money in to money out.", c: "Won jobs and revenue are only as current as the CRM stages." }) +
+      "</section>";
+    html += card("1.2", "Leads by channel", "Where are my leads coming from, and is it growing?", canvas("ov-leads", "tall", "Weekly leads by channel, last 13 weeks"),
+      { l: "Stacked column chart, weekly, last 13 weeks (fixed range).", d: "CRM leads by created date, channel from the lead-source mapping sheet.", f: "Fixed 13-week window so the trend survives a short date range.", w: "The one chart an owner remembers: volume and mix together.", c: "Unmapped sources fall into Other; keep the mapping sheet current." }, "span-7");
+    html += card("1.4", "From visit to revenue", "Where are we losing people?",
+      '<div class="funnel">' + [["Website visits", "4,820", ""], ["Leads", "109", "<b>2.3%</b> of visits"], ["Won jobs", "31", "<b>28%</b> of leads"], ["Won revenue", "$142,600", "avg job <b>$4,600</b>"]].map(function (s) {
+        return '<div class="fstep"><span class="lab">' + s[0] + '</span><span class="val">' + s[1] + '</span><span class="rate">' + (s[2] || "&nbsp;") + "</span></div>";
+      }).join("") + "</div>",
+      { l: "Four scorecards in a row with calculated step rates (Looker has no native funnel chart).", d: "GA4 sessions; CRM leads, won jobs, won revenue.", f: "Date range, channel.", w: "Separates a traffic problem from a follow-up or sales problem, so it is clear whose job the fix is.", c: "Steps come from different systems; rates are indicative." }, "span-5");
+    html += card("1.3", "Channel scoreboard", "Which channel should get my next dollar?", table(
+      [["Channel"], ["Spend", "r"], ["Leads", "r"], ["Cost / lead", "r"], ["Won", "r"], ["Close rate", "r"], ["Revenue", "r"], ["ROAS", "r"]],
+      SCORE.map(function (r, i) { return [chName(i), money(r[1]), n(r[2]), r[1] ? money(r[1] / r[2]) : "—", n(r[3]), pct(r[3] / r[2]), money(r[4]), r[1] ? (r[4] / r[1]).toFixed(1) + "×" : "—"]; }),
+      "Organic, AI and direct leads carry no ad spend, so cost and ROAS show as —.",
+      ["Total", money(8300), "109", money(122) + "*", "31", "28%", money(142600), "9.2×*"]) + '<p class="caveat">* Paid channels only. Blended ROAS (all revenue ÷ ad spend) is 17.2×.</p>',
+      { l: "Table, conditional formatting on Cost / lead and ROAS.", d: "Ad spend (Google Ads + Meta) joined to CRM leads, won jobs and revenue on channel + date.", f: "Date range.", w: "Puts every channel on the same money terms so budget moves are argued with numbers.", c: "Join key is the 7-channel list; every CRM source value must map to one." }, "span-12");
+    html += card("1.5", "Ad spend and won revenue by month", "Is the investment paying back over time?", canvas("ov-month", "", "Monthly ad spend and won revenue, last 12 months"),
+      { l: "Clustered column chart, monthly, last 12 full months (fixed). One $ axis.", d: "Google Ads + Meta spend by month; CRM won revenue by won date.", f: "Fixed 12-month window.", w: "HVAC jobs close weeks after the lead; a monthly view absorbs that lag.", c: "Revenue booked on won date, not lead date." }, "span-12");
+    html += "</div>";
+    addChart("ov-leads", function () { return stackedBars(WEEKS, leadsWeekly, CHANNELS, CHANNELS.map(function (_, i) { return chColor(i); })); });
+    addChart("ov-month", function () {
+      return { type: "bar", data: { labels: MONTHS, datasets: [
+        { label: "Ad spend", data: spendM, backgroundColor: css("--s5"), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "bottom", barPercentage: 0.8, categoryPercentage: 0.7 },
+        { label: "Won revenue", data: revM, backgroundColor: css("--s4"), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "bottom", barPercentage: 0.8, categoryPercentage: 0.7 }] },
+        options: baseOpts({ plugins: { tooltip: { callbacks: { label: function (c) { return " " + c.dataset.label + ": " + money(c.raw); }, footer: function (items) { var i = items[0] && items[0].dataIndex; return i != null ? "Revenue per $1 spent: $" + (revM[i] / spendM[i]).toFixed(1) : ""; } } } }, scales: { y: { ticks: { callback: usd } } } }) };
+    });
+    return html;
+  }
+
+  function pLeads() {
+    var html = '<div class="grid">';
+    html += card("2.1", "Leads by source", "Which exact sources bring leads?", canvas("ld-src", "tall", "Leads by raw source"),
+      { l: "Bar chart (horizontal) with drill-down: channel → raw lead source.", d: "CRM lead-source field: GHL contact source, HubSpot original source + drill-downs, Jobber lead source. Colour = mapped channel.", f: "Date range, channel.", w: "Shows the raw values behind each channel, so mapping gaps are visible.", c: "GoHighLevel source is free text; Coupler's GHL connector does not expose UTM attribution." }, "span-7");
+    html += card("2.2", "Close rate by channel", "Which leads actually turn into jobs?", canvas("ld-close", "tall", "Close rate by channel"),
+      { l: "Bar chart (horizontal), label shows leads count.", d: "CRM won jobs ÷ leads, by mapped channel.", f: "Date range.", w: "A cheap lead that never closes is not cheap. Stops channel decisions on cost per lead alone.", c: "Small channels swing; n is shown on each label." }, "span-5");
+    html += card("2.3", "Pipeline by stage", "What is still in play?", canvas("ld-pipe", "short", "Leads by pipeline stage") + '<p class="caveat">Open pipeline: 47 leads, $118,400 in quotes waiting on a decision.</p>',
+      { l: "Bar chart (horizontal), count, value in tooltip.", d: "Stage mapped to 4 standard buckets: GHL pipeline stage + status, HubSpot dealstage, Jobber quote status.", f: "Date range (lead created), pipeline.", w: "Shows work in progress so a slow month of won jobs is read in context.", c: "Each client's stage names must map to New / Quoted / Won / Lost." }, "span-5");
+    html += card("2.4", "Won revenue by month", "Is revenue growing?", canvas("ld-rev", "short", "Won revenue by month"),
+      { l: "Column chart, last 12 full months (fixed).", d: "CRM won revenue by won date. Jobber: approved quote total.", f: "Fixed 12-month window.", w: "The number the owner runs the business on.", c: "Jobber counts approved quotes, not paid invoices." }, "span-7");
+    html += card("2.5", "Recent leads", "Do these numbers match what I saw?", table(
+      [["Date"], ["Lead"], ["Channel"], ["Source"], ["Stage"], ["Value", "r"]],
+      RECENT.map(function (r) { var cls = r[4] === "Won" ? "won" : r[4] === "Lost" ? "lost" : ""; return [r[0], '<span class="muted">' + r[1] + "</span>", chName(r[2]), esc(r[3]), '<span class="stage ' + cls + '">' + r[4] + "</span>", money(r[5])]; })),
+      { l: "Table, newest first, 10 rows per page.", d: "CRM leads: created date, record ID, mapped channel, raw source, stage bucket, value.", f: "Date range, channel, stage.", w: "Owners trust a report once they find their own leads in it.", c: "No names, phones or emails in the report." }, "span-12");
+    html += "</div>";
+    addChart("ld-src", function () { return hbars(RAW.map(function (r) { return r[0]; }), RAW.map(function (r) { return r[1]; }), RAW.map(function (r) { return chColor(r[2]); }), n); });
+    addChart("ld-close", function () {
+      var rows = SCORE.filter(function (r) { return r[2] > 0; });
+      return hbars(rows.map(function (r) { return r[0] + " (" + r[2] + ")"; }), rows.map(function (r) { return Math.round(100 * r[3] / r[2]); }), rows.map(function (r) { return chColor(CHANNELS.indexOf(r[0])); }), function (v) { return v + "%"; }, { scales: { x: { max: 60 } } });
+    });
+    addChart("ld-pipe", function () {
+      var cfg = hbars(["New", "Quoted", "Won", "Lost"], [26, 21, 31, 31], [css("--s1"), css("--s1"), css("--good"), css("--s-other")], n);
+      var vals = [null, 118400, 142600, 96200];
+      cfg.options.plugins.tooltip.callbacks.label = function (c) { return " " + c.raw + " leads" + (vals[c.dataIndex] ? " · " + money(vals[c.dataIndex]) : ""); };
+      return cfg;
+    });
+    addChart("ld-rev", function () { return columns(MONTHS, revM, css("--s4"), "Won revenue", money, { scales: { y: { ticks: { callback: usd } } } }); });
+    return html;
+  }
+
+  function pPaid() {
+    var html = '<div class="grid">';
+    html += '<section class="card span-12"><header><h3>Paid headline numbers</h3><p class="q">What did the ads deliver, as the ad platforms report it?</p></header><div class="ktiles">' +
+      kpi("Spend", money(8300), delta("▲ 6%", null), "Google $6,200 · Meta $2,100") +
+      kpi("Clicks", "3,412", delta("▲ 9%", true), "") +
+      kpi("Cost per click", "$2.43", delta("▼ 3%", true), "") +
+      kpi("Platform conversions", "81", delta("▲ 12%", true), "CRM shows 68 paid leads") +
+      kpi("Cost per conversion", "$102", delta("▼ 5%", true), "") +
+      "</div>" + notes("3.1", { l: "Scorecards ×5 with comparison.", d: "Google Ads (cost, clicks, conversions) + Meta Ads (spend, link clicks, lead actions).", f: "Date range, platform.", w: "The platforms' own view, before the CRM view on page 1.", c: "Platform conversions will not equal CRM leads (duplicates, spam, short calls). Label both." }) + "</section>";
+    html += card("3.2a", "Spend by week", "Is spend steady?", canvas("pd-spend", "short", "Weekly spend by platform"),
+      { l: "Stacked column, weekly, 13 weeks. Split from 3.2b on purpose (no dual axis).", d: "Google Ads cost, Meta spend.", f: "Platform.", w: "Shows pacing; budget gaps explain lead dips." });
+    html += card("3.2b", "Conversions by week", "Are results following the spend?", canvas("pd-conv", "short", "Weekly conversions by platform"),
+      { l: "Stacked column, weekly, 13 weeks, same x-axis as 3.2a.", d: "Google Ads conversions, Meta lead actions (7-day click).", f: "Platform.", w: "Read beside 3.2a: results should move with budget.", c: "Meta attribution set explicitly to 7-day click in Coupler." });
+    html += card("3.3", "Campaigns", "Which campaigns work?", table(
+      [["Platform"], ["Campaign"], ["Type"], ["Spend", "r"], ["Impr.", "r"], ["Clicks", "r"], ["CTR", "r"], ["CPC", "r"], ["Conv.", "r"], ["Cost / conv.", "r"]],
+      CAMPAIGNS.map(function (r) { return [r[0] === "Google" ? chName(0) : chName(1), esc(r[1]), '<span class="stage">' + r[2] + "</span>", money(r[3]), n(r[4]), n(r[5]), r[4] ? pct(r[5] / r[4], 1) : "—", r[5] ? "$" + (r[3] / r[5]).toFixed(2) : "—", n(r[6]), money(r[3] / r[6])]; }),
+      "Local Services Ads report spend and charged leads only, with no impressions or clicks.",
+      ["", "Total", "", money(8300), "145,300", "3,412", "2.3%", "$2.43", "81", money(102)]),
+      { l: "Table, sortable, platform colour column.", d: "Google Ads campaign report (advertising channel type → Search / PMax / LSA); Meta campaign insights (objective).", f: "Date range, platform.", w: "The working view for Roosterly and the detail view for an engaged owner.", c: "LSA kept at campaign level; lead-level LSA detail is out of scope." }, "span-12");
+    html += card("3.4", "Is budget limiting us?", "Would more budget buy more leads?", canvas("pd-is", "short", "Search impression share by week"),
+      { l: "100% stacked column, weekly, Google Search campaigns only.", d: "Search impression share, share lost to budget, share lost to rank.", f: "Search campaigns.", w: "High 'missed: budget' means more spend buys more demand; high 'missed: ad rank' means fix the ads first." }, "span-7");
+    html += card("3.5", "Calls from Google Ads", "Are people calling, and are we picking up?",
+      '<div class="ktiles">' + kpi("Calls", "64", delta("▲ 10%", true), "") + kpi("Answered", "78%", delta("▼ 4 pts", false), "14 missed") + kpi("Avg length", "3m 12s", delta("▲ 8%", true), "") + "</div>" + canvas("pd-calls", "short", "Answered and missed calls by week"),
+      { l: "Scorecards ×3 + stacked column (answered / missed), weekly.", d: "Google Ads call details: start time, duration, call status.", f: "Date range, campaign.", w: "HVAC buyers call. A missed call is a lost job the owner can fix today.", c: "Needs Google call assets / forwarding numbers on." }, "span-5");
+    html += card("3.6", "Conversions by area", "Are we winning where we work?", canvas("pd-geo", "", "Conversions by ZIP code"),
+      { l: "Geo chart (ZIP) in Looker; shown here as a ranked bar.", d: "Google Ads geographic view (city / ZIP); Meta region breakdown.", f: "Platform.", w: "Local businesses think in service areas; shows spend leaking outside them.", c: "Meta location stops at region." }, "span-4");
+    html += card("3.7", "Top search terms", "What are people actually searching for?", table(
+      [["Search term"], ["Clicks", "r"], ["Cost", "r"], ["Conv.", "r"]],
+      TERMS.map(function (r) { return [esc(r[0]), n(r[1]), money(r[2]), n(r[3])]; })),
+      { l: "Table, top 8 by cost.", d: "Google Ads search terms report.", f: "Date range, campaign.", w: "Real demand in customers' own words; also shows waste.", c: "Google hides low-volume terms." }, "span-4");
+    html += card("3.8", "Facebook or Instagram?", "Where do Meta leads come from?", canvas("pd-meta", "short", "Meta leads by platform") + '<p class="caveat">Cost per lead: Facebook $86 · Instagram $107 · Audience Network $80</p>',
+      { l: "Bar chart (horizontal), leads with CPL in tooltip.", d: "Meta insights by publisher platform.", f: "Date range.", w: "A common owner question with a one-glance answer." }, "span-4");
+    html += "</div>";
+    addChart("pd-spend", function () { return stackedBars(WEEKS, [ramp(1350, 1480, 0.08), ramp(420, 520, 0.12)], ["Google Ads", "Meta Ads"], [css("--s1"), css("--s2")], { plugins: { tooltip: { callbacks: { label: function (c) { return " " + c.dataset.label + ": " + money(c.raw); } } } }, scales: { y: { ticks: { callback: function (v) { return "$" + v; } } } } }); });
+    addChart("pd-conv", function () { return stackedBars(WEEKS, [ramp(11, 14, 0.3), ramp(4, 6, 0.4)], ["Google Ads", "Meta Ads"], [css("--s1"), css("--s2")]); });
+    addChart("pd-is", function () {
+      var cap = ramp(49, 55, 0.08), bud = cap.map(function (c, i) { return Math.round((100 - c) * (0.58 + 0.04 * Math.sin(i))); }), rank = cap.map(function (c, i) { return 100 - c - bud[i]; });
+      return stackedBars(WEEKS, [cap, bud, rank], ["Shown", "Missed: budget", "Missed: ad rank"], [css("--s1"), css("--s5"), css("--s-other")], { plugins: { tooltip: { callbacks: { label: function (c) { return " " + c.dataset.label + ": " + c.raw + "%"; } } } }, scales: { y: { max: 100, ticks: { callback: function (v) { return v + "%"; } } } } });
+    });
+    addChart("pd-calls", function () { return stackedBars(WEEKS, [ramp(9, 12, 0.3), ramp(2, 4, 0.6)], ["Answered", "Missed"], [css("--s1"), css("--bad")]); });
+    addChart("pd-geo", function () { return hbars(ZIPS.map(function (z) { return z[0]; }), ZIPS.map(function (z) { return z[1]; }), ZIPS.map(function () { return css("--s1"); }), function (v) { return v + " conv."; }); });
+    addChart("pd-meta", function () { return hbars(["Facebook", "Instagram", "Audience Network"], [16, 6, 1], [css("--s2"), css("--s2"), css("--s2")], function (v) { return v + " leads"; }); });
+    return html;
+  }
+
+  function pSeo() {
+    var g = function () { return css("--s3"); };
+    var html = '<div class="grid">';
+    html += card("4.1a", "Clicks from Google search", "Are more people visiting from Google?", canvas("se-clicks", "short", "Weekly clicks from Google search"),
+      { l: "Time series, weekly, 13 weeks. Clicks and impressions on separate charts (no dual axis).", d: "Search Console: clicks.", f: "Device, country.", w: "Visits are what the owner feels; shows whether SEO work lands.", c: "Search Console data lags 2–3 days and keeps ~16 months." });
+    html += card("4.1b", "Times seen in Google search", "Are we showing up more often?", canvas("se-impr", "short", "Weekly impressions in Google search"),
+      { l: "Time series, weekly, 13 weeks.", d: "Search Console: impressions.", f: "Device, country.", w: "Visibility leads clicks; rising impressions with flat clicks points at titles and snippets." });
+    html += card("4.2", "Average position", "Are we moving up?", canvas("se-pos", "short", "Average position by week"),
+      { l: "Time series, reversed y-axis (1 at top).", d: "Search Console: average position.", f: "Device.", w: "The SEO progress number owners ask about.", c: "Averages hide single-term moves; read with 4.4." }, "span-5");
+    html += card("4.3", "New customers vs people who know us", "Are new people finding us, or only people who know our name?", canvas("se-brand", "short", "Brand and non-brand clicks by month"),
+      { l: "Stacked column, monthly, 12 months.", d: "Search Console clicks split by a per-client brand regex on query.", f: "Fixed 12-month window.", w: "Non-brand growth is the SEO win; brand clicks come from reputation.", c: "One brand regex per client; anonymised queries excluded from both." }, "span-7");
+    html += card("4.4", "Top search queries", "What do we rank for?", table(
+      [["Query"], ["Clicks", "r"], ["Impr.", "r"], ["CTR", "r"], ["Position", "r"]],
+      QUERIES.map(function (r) { return [esc(r[0]), n(r[1]), n(r[2]), pct(r[1] / r[2], 1), r[3].toFixed(1)]; })),
+      { l: "Table, top 10 by clicks, with brand filter toggle.", d: "Search Console: query, clicks, impressions, CTR, position.", f: "Date range, brand / non-brand.", w: "Concrete proof of the terms the business shows up for." });
+    html += card("4.5", "Pages that bring business from search", "Which pages turn searches into leads?", table(
+      [["Page"], ["Search clicks", "r"], ["Organic visits", "r"], ["Leads", "r"]],
+      ORGPAGES.map(function (r) { return [esc(r[0]), n(r[1]), n(r[2]), n(r[3])]; })),
+      { l: "Table, blended data source.", d: "Search Console page joined to GA4 landing page (channel = Organic Search), GA4 key events.", f: "Date range.", w: "Judges content on leads, not just rankings.", c: "URLs need normalising before the join (trailing slash, domain)." });
+    html += card("4.6", "Leads from organic search", "Is SEO producing leads?",
+      '<div class="ktiles">' + kpi("Organic leads (CRM)", "18", delta("▲ 29%", true), "") + kpi("Form & call events (GA4)", "41", delta("▲ 17%", true), "") + "</div>" + canvas("se-leads", "short", "Weekly organic leads"),
+      { l: "Scorecards ×2 + column, weekly.", d: "CRM leads where channel = Organic Search; GA4 key events where channel = Organic Search.", f: "Date range.", w: "Ties SEO to money." }, "span-12");
+    html += "</div>";
+    addChart("se-clicks", function () { return lines(WEEKS, [ramp(280, 365, 0.1)], ["Clicks"], [g()], { plugins: { legend: { display: false } } }); });
+    addChart("se-impr", function () { return lines(WEEKS, [ramp(14200, 19100, 0.07)], ["Impressions"], [g()], { plugins: { legend: { display: false } } }); });
+    addChart("se-pos", function () { return lines(WEEKS, [ramp1(14.2, 11.6, 0.8)], ["Average position"], [g()], { plugins: { legend: { display: false } }, scales: { y: { reverse: true, beginAtZero: false } } }); });
+    addChart("se-brand", function () { return stackedBars(MONTHS, [ramp(410, 440, 0.1, 12), ramp(300, 1050, 0.1, 12)], ["Brand searches", "Non-brand searches"], [css("--s-other"), g()]); });
+    addChart("se-leads", function () { return columns(WEEKS, leadsWeekly[2], g(), "Organic leads"); });
+    return html;
+  }
+
+  function pGeo() {
+    var html = '<div class="grid">';
+    html += card("5.1", "Visits from AI tools", "Are AI tools sending us customers?", canvas("ai-weekly", "tall", "Weekly visits from AI tools by engine") +
+      '<p class="caveat">This undercounts. Some AI apps hide where a visit came from, and Google Analytics mainly credits the first page of a visit.</p>',
+      { l: "Stacked column, weekly, 13 weeks, one colour per AI tool.", d: "GA4 sessions where session source matches AI domains (chatgpt.com, perplexity.ai, gemini.google.com, copilot.microsoft.com, claude.ai).", f: "Date range.", w: "The proof point for GEO; the split shows where visibility grows.", c: "Use an anchored domain regex; Google's sample AI regex over-matches." }, "span-8");
+    html += card("5.2", "AI share of all visits", "How big is AI as a channel for us?",
+      '<div class="ktiles">' + kpi("AI visits", "118", delta("▲ 61%", true), "") + kpi("Share of visits", "2.4%", delta("▲ 0.9 pts", true), "") + "</div>" + canvas("ai-share", "short", "AI share of visits by week"),
+      { l: "Scorecards ×2 + time series of share, weekly.", d: "GA4 AI sessions ÷ all sessions.", f: "Date range.", w: "Puts AI next to Google and ads so the owner sees its weight honestly." }, "span-4");
+    html += card("5.3", "AI tools compared", "Which AI tool sends the best visitors?", table(
+      [["AI tool"], ["Visits", "r"], ["Engaged", "r"], ["Form & call events", "r"], ["Leads (CRM)", "r"]],
+      ENGTAB.map(function (r, i) { return ['<span class="chip">' + sw(ENG_VAR[i]) + r[0] + "</span>", n(r[1]), pct(r[2]), n(r[3]), n(r[4])]; }),
+      null, ["Total", "118", "68%", "14", "6"]),
+      { l: "Table.", d: "GA4 sessions, engagement rate, key events by AI tool; CRM leads with an AI source (ChatGPT, Perplexity…).", f: "Date range.", w: "AI visitors often arrive better informed; engagement and leads show it.", c: "CRM AI leads depend on the source field capturing the AI tool." }, "span-7");
+    html += card("5.4", "Pages AI tools send people to", "What content is AI citing?", table(
+      [["Page"], ["AI visits", "r"], ["Events", "r"]],
+      AIPAGES.map(function (r) { return [esc(r[0]), bar(r[1], 38, "--s4") + n(r[1]), n(r[2])]; })),
+      { l: "Table with bar-in-cell.", d: "GA4 landing page where channel = AI Search.", f: "Date range, AI tool.", w: "Shows which pages AI tools trust; feeds the GEO content plan." }, "span-5");
+    html += card("5.5", "AI visibility score", "Are we recommended even when nobody clicks?",
+      '<div class="placeholder"><strong>Coming in phase two</strong><span>How often ChatGPT, Perplexity, Gemini and the others name the business when people ask about HVAC in its area, by AI tool and over time.</span></div>',
+      { l: "Placeholder: scorecards + time series by AI tool, once the feed exists.", d: "In-house AI visibility tool via JSON (later).", w: "Most AI influence happens without a click. Reserving the slot avoids a redesign.", c: "Out of phase one (agreed 2026-10-09)." }, "span-12");
+    html += "</div>";
+    addChart("ai-weekly", function () { return stackedBars(WEEKS, aiWeekly, ENGINES, ENG_VAR.map(css)); });
+    addChart("ai-share", function () { return lines(WEEKS, [ramp1(1.3, 2.5, 0.3)], ["AI share of visits"], [css("--s4")], { plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { return " " + c.raw + "%"; } } } }, scales: { y: { ticks: { callback: function (v) { return v + "%"; } } } } }); });
+    return html;
+  }
+
+  function pWeb() {
+    var html = '<div class="grid">';
+    html += card("6.1", "Visits by channel", "How are people reaching the site?", canvas("wb-ch", "tall", "Weekly visits by channel"),
+      { l: "Stacked column, weekly, 13 weeks (stacked area also fine in Looker).", d: "GA4 sessions by default channel group, with AI Search split out by regex.", f: "Date range.", w: "Whole-site context for every other page." }, "span-8");
+    html += card("6.2", "New and returning visitors", "Are we reaching new people?",
+      '<div class="ktiles">' + kpi("Visitors", "3,640", delta("▲ 8%", true), "") + kpi("New", "2,910", delta("▲ 10%", true), "") + kpi("Returning", "730", delta("▲ 2%", true), "") + "</div>",
+      { l: "Scorecards ×3.", d: "GA4 total users, new users; returning = total − new (Coupler has no returning metric).", f: "Date range, channel.", w: "Growth means new people; returning visitors mean consideration." }, "span-4");
+    html += card("6.3", "Lead rate by channel", "Which visitors become leads?", canvas("wb-rate", "", "Lead rate by channel"),
+      { l: "Bar chart (horizontal).", d: "GA4 session key event rate by channel.", f: "Date range.", w: "Traffic quality by source.", c: "Needs key events set per client (form submit, call click)." }, "span-5");
+    html += card("6.4", "Top landing pages", "Which pages work?", table(
+      [["Page"], ["Visits", "r"], ["Engaged", "r"], ["Leads", "r"]],
+      LANDING.map(function (r) { return [esc(r[0]), n(r[1]), pct(r[2]), n(r[3])]; })),
+      { l: "Table, top 10 by visits.", d: "GA4 landing page, sessions, engagement rate, key events.", f: "Date range, channel.", w: "Where to focus site improvements." }, "span-7");
+    html += card("6.5", "Visitors by city", "Are visitors from our service area?", canvas("wb-city", "short", "Visitors by city"),
+      { l: "Geo chart (city) in Looker; shown here as a ranked bar.", d: "GA4 city.", f: "Date range.", w: "Local relevance check beside the ads map." }, "span-7");
+    html += card("6.6", "Phone or computer?", "How do visitors browse?", canvas("wb-dev", "short", "Visits by device"),
+      { l: "100% stacked bar (single row).", d: "GA4 device category.", f: "Date range.", w: "Most visits are on phones, which is why click-to-call matters." }, "span-5");
+    html += "</div>";
+    addChart("wb-ch", function () { return stackedBars(WEEKS, sessWeekly, CHANNELS, CHANNELS.map(function (_, i) { return chColor(i); })); });
+    addChart("wb-rate", function () { return hbars(LEADRATE.map(function (r) { return r[0]; }), LEADRATE.map(function (r) { return r[1]; }), LEADRATE.map(function (r) { return chColor(CHANNELS.indexOf(r[0])); }), function (v) { return v + "%"; }); });
+    addChart("wb-city", function () { return hbars(CITIES.map(function (r) { return r[0]; }), CITIES.map(function (r) { return r[1]; }), CITIES.map(function (r) { return r[0] === "Other" ? css("--s-other") : css("--s1"); }), n); });
+    addChart("wb-dev", function () {
+      var d = [["Phone", 68, "--s1"], ["Computer", 29, "--s6"], ["Tablet", 3, "--s4"]];
+      return { type: "bar", data: { labels: ["Visits"], datasets: d.map(function (x, i) { return { label: x[0] + " " + x[1] + "%", data: [x[1]], backgroundColor: css(x[2]), borderColor: css("--surface"), borderWidth: { right: 2 }, borderSkipped: false, borderRadius: i === 0 ? { topLeft: 4, bottomLeft: 4 } : i === d.length - 1 ? { topRight: 4, bottomRight: 4 } : 0, stack: "s", barPercentage: 0.5 }; }) },
+        options: baseOpts({ indexAxis: "y", plugins: { tooltip: { callbacks: { label: function (c) { return " " + c.dataset.label; } } } }, scales: { x: { stacked: true, max: 100, grid: { display: false }, ticks: { callback: function (v) { return v + "%"; } } }, y: { stacked: true, display: false } } }) };
+    });
+    return html;
+  }
+
+  // ---------- shell ----------
+  var nav = document.getElementById("pages"), main = document.getElementById("page");
+  nav.innerHTML = PAGES.map(function (p, i) { return '<button class="pagebtn" type="button" data-page="' + p.id + '"><b>' + (i + 1) + "</b>" + p.name + "</button>"; }).join("") +
+    '<div class="legendbox"><strong>Channels</strong>' + CHANNELS.map(function (c, i) { return "<span>" + sw(CH_VAR[i]) + c + "</span>"; }).join("") + "</div>";
+  function show(id) {
+    var p = PAGES.filter(function (x) { return x.id === id; })[0] || PAGES[0];
+    builders = [];
+    main.innerHTML = '<div class="pagehead"><h2>' + p.name + "</h2><p>" + p.q + "</p></div>" + p.render();
+    nav.querySelectorAll(".pagebtn").forEach(function (b) { if (b.dataset.page === p.id) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+    drawCharts();
+  }
+  nav.addEventListener("click", function (e) {
+    var b = e.target.closest(".pagebtn"); if (!b) return;
+    show(b.dataset.page);
+    try { history.replaceState(null, "", "#" + b.dataset.page); } catch (err) {}
+    window.scrollTo({ top: 0 });
+  });
+  var tgl = document.getElementById("notesToggle");
+  function setNotes(on) {
+    document.body.classList.toggle("show-notes", on);
+    tgl.setAttribute("aria-pressed", on ? "true" : "false");
+    tgl.textContent = on ? "Hide build notes" : "Show build notes";
+    try { localStorage.setItem("rst-dash-notes", on ? "1" : "0"); } catch (err) {}
+  }
+  tgl.addEventListener("click", function () { setNotes(!document.body.classList.contains("show-notes")); });
+  try { if (localStorage.getItem("rst-dash-notes") === "1") setNotes(true); } catch (err) {}
+
+  if (window.Chart) Chart.defaults.font.family = css("--font");
+  var start = (location.hash || "").replace("#", "");
+  show(PAGES.some(function (p) { return p.id === start; }) ? start : "overview");
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { drawCharts(); });
+})();
+</script>
+</body>
+</html>
